@@ -40,6 +40,29 @@ PD_SETTINGS = {
     "right_joint6": (10000.0, 500.0, 30.0),
     "right_joint7": (10000.0, 500.0, 30.0),
 }
+# 1/2 the PD stiffness and damping
+# PD_SETTINGS = {k: (v[0] / 2, v[1] / 2, v[2]) for k, v in PD_SETTINGS.items()}
+
+# 1/4 the PD stiffness and damping
+# PD_SETTINGS = {k: (v[0] / 4, v[1] / 4, v[2]) for k, v in PD_SETTINGS.items()}
+
+# 1/8 the PD stiffness and damping
+# PD_SETTINGS_EIGHTH = {k: (v[0] / 8, v[1] / 8, v[2]) for k, v in PD_SETTINGS.items()}
+
+# 1/16 the PD stiffness and damping
+# PD_SETTINGS_SIXTEENTH = {k: (v[0] / 16, v[1] / 16, v[2]) for k, v in PD_SETTINGS.items()}
+
+# 1/32 the PD stiffness and damping
+# PD_SETTINGS_THIRTY_SECOND = {k: (v[0] / 32, v[1] / 32, v[2]) for k, v in PD_SETTINGS.items()}
+
+# 1/64 the PD stiffness and damping
+# PD_SETTINGS = {k: (v[0] / 64, v[1] / 16, v[2]) for k, v in PD_SETTINGS.items()}
+
+# 1/128 the PD stiffness and damping
+PD_SETTINGS = {k: (v[0] / 128, v[1] / 16, v[2]) for k, v in PD_SETTINGS.items()}
+
+# 0 stiffness
+# PD_SETTINGS = {k: (0, v[1], v[2]) for k, v in PD_SETTINGS.items()}
 
 def main():
     # -------------------
@@ -182,7 +205,7 @@ def main():
         ], dtype=np.float32)
         
     # A simple first-order smoothing on target (not physics PD; just target interpolation)
-    alpha = 0.02  # smoothing factor; smaller = slower
+    alpha = 0.01  # smoothing factor; smaller = slower
     
     # -------------------
     # 5) Simulation Loop
