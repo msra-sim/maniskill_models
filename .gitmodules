@@ -1,3 +1,7 @@
 [submodule "robot_descriptions"]
 	path = robot_descriptions
 	url = https://github.com/msra-sim/robot_descriptions.git
+[submodule "ManiSkill"]
+	path = ManiSkill
+	url = https://github.com/v-xchen-v/ManiSkill.git
+	branch = main_xc
