@@ -125,20 +125,33 @@ while not viewer.closed:
     scene.update_render()
     viewer.render()
 
+    # back and forward arm in loop
+    arm_q_des = np.array([
+        1.075,
+        -0.61137,
+        -0.2807,
+        1.2839,
+        -0.7319,
+        -1.495,
+        0.1876,
+    ], dtype=np.float32)
+
     # in loop open/close the gripper
     time += dt
     gripper_value = 0.5 + 0.5 * np.sin(time)
+    arm_value = arm_q_des * 0.5 + arm_q_des * 0.5 * np.sin(time * 0.5)
 
     # gripper limits to [0.1, 0.8]
     gripper_value = np.clip(gripper_value, 0.3, 0.8)
 
     qpos = []
-    for joint in robot.get_active_joints():
+    for joint_idx, joint in enumerate(robot.get_active_joints()):
         joint_name = joint.get_name()
         if joint_name in mimic_multipliers:
             qpos.append(gripper_value * mimic_multipliers[joint_name])
         elif joint_name.startswith("right_joint"):
-            qpos.append(0.0)
+            # qpos.append(0.0)
+            qpos.append([arm_value[joint_idx]])
         else:
             qpos.append(gripper_value)  # keep arm joints at gripper_value for testing
     # robot.set_qpos(np.array(qpos))
