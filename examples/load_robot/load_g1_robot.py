@@ -73,44 +73,138 @@ GRIPPER_JOINT_NAMES = [
 
 TARGET_JOINT_NAMES = ARM_JOINT_NAMES + GRIPPER_JOINT_NAMES
 
-def init_robot_PD(robot, target_joint_names: list, mimic_joint_names: list):
-    """
-    Initialize robot joints with PD control for target joints and mimic joints.
-    Non-target joints are set to passive mode (stiffness=0).
-    
-    In SAPIEN, mimic joints need PD control too, but we'll manually update their targets.
-    
-    Args:
-        robot: The robot articulation
-        target_joint_names: List of joint names to control (not including mimic joints)
-        mimic_joint_names: List of mimic joint names (these also get PD control)
-    """
-    # Use EXTREMELY conservative PD parameters to prevent instability
-    stiffness = 50.0    # Very low stiffness
-    damping = 5.0       # Very low damping
-    force_limit = 20.0  # Very low force limit
-    
-    active_joints = robot.get_active_joints()
-    
-    for j in active_joints:
-        if j.get_dof() > 0:
-            jname = j.get_name()
-            # Target joints AND mimic joints get PD control
-            if jname in target_joint_names or jname in mimic_joint_names:
-                try:
-                    j.set_drive_property(stiffness, damping, force_limit)
-                except TypeError:
-                    j.set_drive_property(stiffness, damping, force_limit, "force")
-                print(f"[INFO] Set PD control for joint: {jname} (stiffness={stiffness}, damping={damping})")
-            else:
-                # All other joints (non-target, non-mimic) are passive
-                try:
-                    j.set_drive_property(0.0, 0.0, 0.0)
-                except TypeError:
-                    j.set_drive_property(0.0, 0.0, 0.0, "force")
-                print(f"[INFO] Set passive for joint: {jname}")
+# PD settings for arm joints (from g1_wo_gripper.py - 1/128 stiffness, 1/16 damping)
+# ARM_PD_SETTINGS = {
+#     "left_joint1": (10000.0 , 500.0 / 16, 60.0),
+#     "left_joint2": (10000.0 / 128, 500.0 / 16, 60.0),
+#     "left_joint3": (10000.0 / 128, 500.0 / 16, 60.0),
+#     "left_joint4": (10000.0 / 128, 500.0 / 16, 60.0),
+#     "left_joint5": (10000.0 / 128, 500.0 / 16, 30.0),
+#     "left_joint6": (10000.0 / 128, 500.0 / 16, 30.0),
+#     "left_joint7": (10000.0 / 128, 500.0 / 16, 30.0),
+#     "right_joint1": (10000.0 / 128, 500.0 / 16, 60.0),
+#     "right_joint2": (10000.0 / 128, 500.0 / 16, 60.0),
+#     "right_joint3": (10000.0 / 128, 500.0 / 16, 60.0),
+#     "right_joint4": (10000.0 / 128, 500.0 / 16, 60.0),
+#     "right_joint5": (10000.0 / 128, 500.0 / 16, 30.0),
+#     "right_joint6": (10000.0 / 128, 500.0 / 16, 30.0),
+#     "right_joint7": (10000.0 / 128, 500.0 / 16, 30.0),
+# }
 
-def set_gripper(robot, type: str, qpos: float, mimic_map: dict):
+ARM_PD_SETTINGS = {
+    "left_joint1": (10000.0 , 500.0 , 60.0),
+    "left_joint2": (10000.0 , 500.0 , 60.0),
+    "left_joint3": (10000.0 , 500.0 , 60.0),
+    "left_joint4": (10000.0 , 500.0 , 60.0),
+    "left_joint5": (10000.0 , 500.0 , 30.0),
+    "left_joint6": (10000.0 , 500.0 , 30.0),
+    "left_joint7": (10000.0 , 500.0 , 30.0),
+    "right_joint1": (10000.0 , 500.0 , 60.0),
+    "right_joint2": (10000.0 , 500.0 , 60.0),
+    "right_joint3": (10000.0 , 500.0 , 60.0),
+    "right_joint4": (10000.0 , 500.0 , 60.0),
+    "right_joint5": (10000.0 , 500.0 , 30.0),
+    "right_joint6": (10000.0 , 500.0 , 30.0),
+    "right_joint7": (10000.0 , 500.0 , 30.0),
+}
+
+# ARM_PD_SETTINGS = {
+#     "left_joint1": (0 , 0 , 160.0),
+#     "left_joint2": (0 , 0 , 160.0),
+#     "left_joint3": (0 , 0 , 160.0),
+#     "left_joint4": (0 , 0 , 160.0),
+#     "left_joint5": (0 , 0 , 130.0),
+#     "left_joint6": (0 , 0 , 130.0),
+#     "left_joint7": (0 , 0 , 130.0),
+#     "right_joint1": (0 , 0 , 160.0),
+#     "right_joint2": (0 , 0 , 160.0),
+#     "right_joint3": (0 , 0 , 160.0),
+#     "right_joint4": (0 , 0 , 160.0),
+#     "right_joint5": (0 , 0 , 130.0),
+#     "right_joint6": (0 , 0 , 130.0),
+#     "right_joint7": (0 , 0 , 130.0),
+# }
+
+# PD settings for gripper master joints (from omni_picker.py)
+GRIPPER_PD_SETTINGS = {
+    "left_gripper_joint": (100.0, 10.0, 50.0),
+    "right_gripper_joint": (100.0, 10.0, 50.0),
+}
+
+# GRIPPER_PD_SETTINGS = {
+#     "left_gripper_joint": (0.0, 0.0, 0.0),
+#     "right_gripper_joint": (0.0, 0.0, 0.0),
+# }
+
+# PD settings for gripper mimic joints (from omni_picker.py - higher stiffness, zero damping)
+# MIMIC_PD_SETTINGS = {
+#     "stiffness": 2000.0,
+#     "damping": 0.0,
+#     "force_limit": 5.0,
+# }
+
+MIMIC_PD_SETTINGS = {
+    "stiffness": 1.0,
+    "damping": 20.0,
+    "force_limit": 0.1,
+}
+# MIMIC_PD_SETTINGS = {
+#     "stiffness": 500.0, # Must be > 0 to follow the target!
+#     "damping": 5.0,     # Small amount to stop shaking
+#     "force_limit": 100.0,
+# }
+
+mimic_multipliers = {
+    # 'gripper_joint': 1.0,
+    # 'narrow2_joint': 0.02,
+    # 'narrow3_joint': 0.4,
+    # 'narrow_loop_joint': 1.5,
+    # 'wide1_joint': 1.0,
+    # 'wide2_joint': 0.02,
+    # 'wide3_joint': 0.4,
+    # 'wide_loop_joint': 1.5,
+    # 'left_gripper_joint': 1.0,
+    'left_narrow2_joint': 0.02,
+    'left_narrow3_joint': 0.4,
+    'left_narrow_loop_joint': 1.5,
+    'left_wide1_joint': 1.0,
+    'left_wide2_joint': 0.02,
+    'left_wide3_joint': 0.4,
+    'left_wide_loop_joint': 1.5,
+    # 'right_gripper_joint': 1.0,
+    'right_narrow2_joint': 0.02,
+    'right_narrow3_joint': 0.4,
+    'right_narrow_loop_joint': 1.5,
+    'right_wide1_joint': 1.0,
+    'right_wide2_joint': 0.02,
+    'right_wide3_joint': 0.4,
+    'right_wide_loop_joint': 1.5,
+}
+
+def init_robot_PD(robot):
+    # set ARM joint PD
+    for joint in robot.get_active_joints():
+        joint_name = joint.get_name()
+        if joint_name in ARM_PD_SETTINGS:
+            stiffness, damping, force_limit = ARM_PD_SETTINGS[joint_name]
+            joint.set_drive_properties(stiffness=stiffness, damping=damping, force_limit=force_limit)
+            print(f"[INFO] Set arm joint PD: {joint_name} stiffness={stiffness}, damping={damping}, force_limit={force_limit}")
+        elif joint_name in GRIPPER_PD_SETTINGS:
+            stiffness, damping, force_limit = GRIPPER_PD_SETTINGS[joint_name]
+            joint.set_drive_properties(stiffness=stiffness, damping=damping, force_limit=force_limit)
+            print(f"[INFO] Set gripper joint PD: {joint_name} stiffness={stiffness}, damping={damping}, force_limit={force_limit}")
+        elif joint_name in mimic_multipliers.keys():
+            # set a very weak PD control for the gripper mimic joints
+            # joint.set_drive_properties(stiffness=MIMIC_PD_SETTINGS['stiffness'], 
+            #                           damping=MIMIC_PD_SETTINGS['damping'], 
+            #                           force_limit=MIMIC_PD_SETTINGS['force_limit'],
+            #                           mode="acceleration")
+            # print(f"[INFO] Set mimic joint PD: {joint_name} stiffness={MIMIC_PD_SETTINGS['stiffness']}, damping={MIMIC_PD_SETTINGS['damping']}, force_limit={MIMIC_PD_SETTINGS['force_limit']}")        
+            pass
+        # joints.set_friction(0.05)
+    
+
+def set_gripper(robot, type: str, qpos: float, mimic_map: dict, scene):
     """
     Set gripper joint positions based on type, left or right.
     
@@ -136,10 +230,16 @@ def set_gripper(robot, type: str, qpos: float, mimic_map: dict):
     if MASTER_JOINT_NAME in name_to_joint:
         name_to_joint[MASTER_JOINT_NAME].set_drive_target(float(qpos))
     
+    # scene.step()  # Step once to apply the master joint change
+    
     # Apply mimic rules: mimic_target = multiplier * master_qpos + offset
     for mimic_joint_name, (master_name, mult, offs) in mimic_map.items():
         if master_name == MASTER_JOINT_NAME and mimic_joint_name in name_to_joint:
             mimic_target = mult * qpos + offs
+            # need clamp mimic_target within joint limits
+            # mimic_target = max(min(mimic_target, name_to_joint[mimic_joint_name].get_upper_limit()), name_to_joint[mimic_joint_name].get_lower_limit())
+            # lower="-3.141592653589793" upper="3.141592653589793"
+            mimic_target = max(min(mimic_target, 3.141592653589793), -3.141592653589793)
             name_to_joint[mimic_joint_name].set_drive_target(float(mimic_target))
     
     
@@ -230,7 +330,18 @@ def parse_mimic_map_from_urdf(urdf_path: str):
 
 MIMIC_JOINT_NAMES = []
 
-        
+def disable_internal_collisions(robot):
+    links = robot.get_links()
+    for link in links:
+        # Get all collision shapes for the link
+        shapes = link.get_collision_shapes()
+        for shape in shapes:
+            # Group 1: Collision identity
+            # Group 2: Collision mask (what it hits)
+            # Setting these to [1,1,0,0] effectively makes the link a "ghost" 
+            # to check if collisions are causing the explosion.
+            shape.set_collision_groups([1, 1, 0, 0]) 
+    print("[INFO] Disabled all internal collisions for debugging.")
 
 def main():
     # -------------------
@@ -241,6 +352,10 @@ def main():
     scene = engine.create_scene()
     scene.set_timestep(1 / 240.0)  # Smaller timestep for better stability
     
+    # solver settings for better stability
+    # get scene config
+
+    
     # Add a ground plane
     scene.add_ground(altitude=0)
     
@@ -249,10 +364,11 @@ def main():
     scene.add_directional_light([0, 1, -1], [0.5, 0.5, 0.5], shadow=True)
     scene.add_point_light([1, 2, 2], [1, 1, 1], shadow=True)
     
+    
     # -------------------
     # 2) Load G1 URDF
     # -------------------
-    urdf_path = "robot_descriptions/manipulation/Agibot/agibot_g1_description/urdf/agibot_g1_omni-picker.urdf"
+    urdf_path = "robot_descriptions/manipulation/Agibot/agibot_g1_with_gripper_description/agibot_g1_with_omnipicker.debug.urdf"
     
     # Parse mimic joints from URDF (SAPIEN doesn't enforce them automatically)
     if os.path.exists(urdf_path):
@@ -272,8 +388,28 @@ def main():
     robot = loader.load(urdf_path)
     assert robot is not None, f"Failed to load URDF: {urdf_path}"
     
+    disable_internal_collisions(robot)
+
     # Put robot at origin
     robot.set_pose(sapien.Pose([0, 0, 0]))
+
+    for link in robot.get_links():
+        if "narrow" in link.get_name() or "wide" in link.get_name():
+            # Physical stability hack: boost mass of tiny fingers
+            mass = link.get_mass()
+            if mass < 0.1:
+                # Manually setting a minimum mass for solver stability
+                # Note: This requires SAPIEN 2.0+ API
+                # If link.set_mass() isn't available, you must edit the URDF <mass> tags
+                link.set_mass(0.1)
+                print(f"[INFO] Boosted mass of link {link.get_name()} from {mass} to 0.1 kg for stability.")
+
+    # # Disable collisions between arm end and gripper base
+    # for link in robot.get_links():
+    #     if "gripper" in link.get_name() or "camera_stand" in link.get_name():
+    #         # Set a collision group that ignores itself or specific neighbors
+    #         collision_shape = link.get_collision_shapes()[0]
+    #         collision_shape.set_collision_groups(1, 1, 2, 2) # Group, Mask, etc.
     
     # -------------------
     # 3) PD Drive Setup
@@ -285,7 +421,7 @@ def main():
     
     # make all non-target joints passive (no PD control), only target joints get PD control
     # Mimic joints should also be passive - they don't get direct PD control
-    init_robot_PD(robot, TARGET_JOINT_NAMES, MIMIC_JOINT_NAMES)
+    init_robot_PD(robot)
     
     # Initialize at q0 (initial configuration)
     q0_arm = get_arm_targets(robot, ARM_JOINT_NAMES)
@@ -297,10 +433,10 @@ def main():
     print(f"[INFO] q0_gripper_left: {q0_gripper_left}")
     print(f"[INFO] q0_gripper_right: {q0_gripper_right}")
     
-    # IMPORTANT: Set initial drive targets to current positions before simulation starts
-    # First, zero out all velocities
-    robot.set_qvel(np.zeros(robot.dof))
-    print("[INFO] Zeroed all velocities")
+    # # IMPORTANT: Set initial drive targets to current positions before simulation starts
+    # # First, zero out all velocities
+    # robot.set_qvel(np.zeros(robot.dof))
+    # print("[INFO] Zeroed all velocities")
     
     # Set qpos again to ensure proper initialization
     qpos_full = robot.get_qpos()
@@ -309,8 +445,8 @@ def main():
     
     # Set drive targets to current positions
     set_arm_targets(robot, ARM_JOINT_NAMES, q0_arm)
-    set_gripper(robot, "left", q0_gripper_left, mimic_map)
-    set_gripper(robot, "right", q0_gripper_right, mimic_map)
+    set_gripper(robot, "left", q0_gripper_left, mimic_map, scene)
+    set_gripper(robot, "right", q0_gripper_right, mimic_map, scene)
     print("[INFO] Initial drive targets set to q0 positions")
     
     # Run simulation steps with forced zero velocity to let robot stabilize
@@ -348,7 +484,7 @@ def main():
     while not viewer.closed:
         viewer.render()
         if counter == 0:
-            time.sleep(10)
+            time.sleep(1.0)  # Initial pause to observe
         else:
             time.sleep(0.01)
         counter += 1
@@ -357,8 +493,8 @@ def main():
         
         # Apply targets to target joints and mimic coupling
         set_arm_targets(robot, ARM_JOINT_NAMES, q_cmd[:14])
-        set_gripper(robot, "left", q_cmd[14], mimic_map)
-        set_gripper(robot, "right", q_cmd[15], mimic_map)
+        set_gripper(robot, "left", q_cmd[14], mimic_map, scene)
+        set_gripper(robot, "right", q_cmd[15], mimic_map, scene)
         
         # Step physics
         scene.step()

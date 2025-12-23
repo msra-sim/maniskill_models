@@ -11,12 +11,14 @@ loader = scene.create_urdf_loader()
 # loader.fix_root_link = True  # Fix the base to prevent falling
 # loader.load_multiple_collisions_from_file = True  # Better collision handling
 # robot = loader.load("robot_descriptions/Panda/panda.urdf")  # Replace
-robot = loader.load("robot_descriptions/manipulation/Agibot/agibot_omni_description/urdf/omni_picker.urdf")
+# robot = loader.load("robot_descriptions/manipulation/Agibot/agibot_omni_description/urdf/omni_picker.urdf")
+robot = loader.load("robot_descriptions/manipulation/Agibot/agibot_g1_with_gripper_description/agibot_g1_with_omnipicker.singlearm.urdf")
 
 assert robot is not None
 
 # Set initial pose above ground
 robot.set_root_pose(sapien.Pose([0, 0, 0.5]))
+# robot.set_root_pose(sapien.Pose([0, 0, 0.5], [0, 0, 1, 0]))
 
 # Disable self-collision to prevent finger collisions
 for link in robot.get_links():
@@ -88,6 +90,12 @@ scene.add_point_light([1, 2, 2], [1, 1, 1], shadow=True)
 time = 0.0
 dt = 1 / 240.0
 scene.set_timestep(dt)
+
+
+# print joint name with order
+for j_idx, j in enumerate(robot.get_active_joints()):
+    j_name = j.get_name()
+    print(f"{j_idx}: Joint '{j_name}'")
 while not viewer.closed:
     scene.step()
     scene.update_render()
@@ -102,5 +110,10 @@ while not viewer.closed:
         if joint_name in mimic_multipliers:
             qpos.append(gripper_value * mimic_multipliers[joint_name])
         else:
-            qpos.append(0.0)
-    robot.set_qpos(np.array(qpos))
+            # qpos.append(0.0)
+            qpos.append(gripper_value)  # keep arm joints at gripper_value for testing
+    # robot.set_qpos(np.array(qpos))
+    # Instead of directly setting qpos, use drive targets for smooth motion
+    for i, joint in enumerate(robot.get_active_joints()):
+        joint.set_drive_target(qpos[i])
+    
