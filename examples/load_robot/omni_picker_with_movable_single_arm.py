@@ -11,7 +11,8 @@ loader = scene.create_urdf_loader()
 # loader.fix_root_link = True  # Fix the base to prevent falling
 # loader.load_multiple_collisions_from_file = True  # Better collision handling
 # robot = loader.load("robot_descriptions/Panda/panda.urdf")  # Replace
-robot = loader.load("robot_descriptions/manipulation/Agibot/agibot_omni_description/urdf/omni_picker.urdf")
+# robot = loader.load("robot_descriptions/manipulation/Agibot/agibot_omni_description/urdf/omni_picker.urdf")
+robot = loader.load("robot_descriptions/manipulation/Agibot/agibot_g1_with_gripper_description/agibot_g1_with_omnipicker.single_movable_arm.urdf")
 
 assert robot is not None
 
@@ -56,22 +57,26 @@ for joint in robot.get_active_joints():
 
 # Optional: Add weak PD control for stability
 for joint in robot.get_active_joints():
-    # joint.set_drive_property(stiffness=20.0, damping=5.0)
-    # joint.set_drive_properties(stiffness=100.0, damping=10.0, force_limit=50) # in isaac sim, usd is set to stiffness:100, damping: 10, no force limit
-    # joint.set_drive_properties(stiffness=200.0, damping=20.0, force_limit=50) 
-    # joint.set_drive_properties(stiffness=400.0, damping=40.0) 
     joint_name = joint.get_name()
     if joint_name in mimic_multipliers.keys():
-        # set a very weak PD control for the gripper joints
-        # joint.set_drive_properties(stiffness=2000.0, damping=0.0) # big stiffness and zero damping on mimic joint to avoid shaking
-         joint.set_drive_properties(stiffness=1000.0, damping=0.0) # big stiffness and zero damping on mimic joint to avoid shaking
-        
+        # Mimic joints: High stiffness but WITH force limit and damping to prevent overpowering arm
+        # joint.set_drive_properties(stiffness=2000.0, damping=0.0, force_limit=100.0)
+        joint.set_drive_properties(stiffness=1000.0, damping=0.0, force_limit=100.0)
+        print(f"[MIMIC] {joint_name}: stiffness=1000.0, damping=0.0, force_limit=100.0")
+    elif joint_name.startswith("gripper"):
+        # Master gripper joint: moderate control
+        joint.set_drive_properties(stiffness=100.0, damping=10.0, force_limit=50.0)
+        print(f"[GRIPPER] {joint_name}: stiffness=100.0, damping=10.0, force_limit=50.0")
     else:
-        joint.set_drive_properties(stiffness=100.0, damping=10.0, force_limit=50)
-    # set a normal stiffness and damping for the arm joints
-    # joint.set_drive_property(stiffness=1000.0, damping=40.0)
-# Set initial position directly (more stable than PD control)
+        # Arm joints: strong control to resist gripper forces
+        joint.set_drive_properties(stiffness=2000, damping=500, force_limit=10000)
 
+        #### VERY IMPORTANT: if not set manually the arm will not stay 
+        joint.set_armature([0.5])
+        # joint.set_friction(1.0)
+        print(f"[ARM] {joint_name}: stiffness={joint.stiffness}, damping=1000.0, force_limit=200.0")
+# Set initial position directly (more stable than PD control)
+pass
 
 robot.set_qpos(np.array(qpos))
 print("Initial qpos set to:", robot.get_qpos())
@@ -97,6 +102,24 @@ scene.set_timestep(dt)
 for j_idx, j in enumerate(robot.get_active_joints()):
     j_name = j.get_name()
     print(f"{j_idx}: Joint '{j_name}'")
+"""
+0: Joint 'right_joint1'
+1: Joint 'right_joint2'
+2: Joint 'right_joint3'
+3: Joint 'right_joint4'
+4: Joint 'right_joint5'
+5: Joint 'right_joint6'
+6: Joint 'right_joint7'
+7: Joint 'gripper_joint'
+8: Joint 'narrow_loop_joint'
+9: Joint 'wide1_joint'
+10: Joint 'wide_loop_joint'
+11: Joint 'narrow2_joint'
+12: Joint 'wide2_joint'
+13: Joint 'narrow3_joint'
+14: Joint 'wide3_joint'
+"""
+
 while not viewer.closed:
     scene.step()
     scene.update_render()
@@ -105,16 +128,22 @@ while not viewer.closed:
     # in loop open/close the gripper
     time += dt
     gripper_value = 0.5 + 0.5 * np.sin(time)
+
+    # gripper limits to [0.1, 0.8]
+    gripper_value = np.clip(gripper_value, 0.3, 0.8)
+
     qpos = []
     for joint in robot.get_active_joints():
         joint_name = joint.get_name()
         if joint_name in mimic_multipliers:
             qpos.append(gripper_value * mimic_multipliers[joint_name])
+        elif joint_name.startswith("right_joint"):
+            qpos.append(0.0)
         else:
-            # qpos.append(0.0)
             qpos.append(gripper_value)  # keep arm joints at gripper_value for testing
     # robot.set_qpos(np.array(qpos))
     # Instead of directly setting qpos, use drive targets for smooth motion
     for i, joint in enumerate(robot.get_active_joints()):
+        print(f"Setting joint {joint.get_name()} drive target to {qpos[i]}")
         joint.set_drive_target(qpos[i])
     

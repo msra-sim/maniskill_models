@@ -11,7 +11,8 @@ loader = scene.create_urdf_loader()
 # loader.fix_root_link = True  # Fix the base to prevent falling
 # loader.load_multiple_collisions_from_file = True  # Better collision handling
 # robot = loader.load("robot_descriptions/Panda/panda.urdf")  # Replace
-robot = loader.load("robot_descriptions/manipulation/Agibot/agibot_omni_description/urdf/omni_picker.urdf")
+# robot = loader.load("robot_descriptions/manipulation/Agibot/agibot_omni_description/urdf/omni_picker.urdf")
+robot = loader.load("robot_descriptions/manipulation/Agibot/agibot_g1_with_gripper_description/agibot_g1_with_omnipicker.single_fixed_arm.urdf")
 
 assert robot is not None
 
@@ -63,9 +64,7 @@ for joint in robot.get_active_joints():
     joint_name = joint.get_name()
     if joint_name in mimic_multipliers.keys():
         # set a very weak PD control for the gripper joints
-        # joint.set_drive_properties(stiffness=2000.0, damping=0.0) # big stiffness and zero damping on mimic joint to avoid shaking
-         joint.set_drive_properties(stiffness=1000.0, damping=0.0) # big stiffness and zero damping on mimic joint to avoid shaking
-        
+        joint.set_drive_properties(stiffness=2000.0, damping=0.0) # big stiffness and zero damping on mimic joint to avoid shaking
     else:
         joint.set_drive_properties(stiffness=100.0, damping=10.0, force_limit=50)
     # set a normal stiffness and damping for the arm joints
@@ -105,6 +104,7 @@ while not viewer.closed:
     # in loop open/close the gripper
     time += dt
     gripper_value = 0.5 + 0.5 * np.sin(time)
+
     qpos = []
     for joint in robot.get_active_joints():
         joint_name = joint.get_name()
