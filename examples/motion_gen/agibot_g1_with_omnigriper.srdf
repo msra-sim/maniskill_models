@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<robot name="my_robot">
+
+  <!-- ============================= -->
+  <!-- Virtual Joint (root → world)  -->
+  <!-- ============================= -->
+  <!-- <virtual_joint
+    name="world_joint"
+    type="fixed"
+    parent_frame="world"
+    child_link="base_link" /> -->
+
+  <!-- ============================= -->
+  <!-- Planning Group (arm only)     -->
+  <!-- ============================= -->
+  <group name="left_arm">
+    <chain base_link="left_base_link" tip_link="arm_l_end_link" />
+  </group>
+
+  <group name="left_hand">
+        <chain base_link="arm_l_end_link" tip_link="left_eef" />
+    </group>
+
+  <!-- Define the gripper as the end effector -->
+  <end_effector name="left_gripper" parent_link="arm_l_end_link" group="left_hand" />
+  
+  <group name="right_arm">
+    <chain base_link="right_base_link" tip_link="arm_r_end_link" />
+  </group>
+
+  <!-- ============================= -->
+  <!-- Disable Collisions            -->
+  <!-- ============================= -->
+  <!-- Adjacent link pairs -->
+  <disable_collisions link1="left_narrow2_Link" link2="left_narrow3_Link" reason="Adjacent" />
+  <disable_collisions link1="left_link2" link2="left_link3" reason="Adjacent" />
+  <disable_collisions link1="arm_l_end_link" link2="left_camera_stand_end" reason="Adjacent" />
+  <disable_collisions link1="body_link1" link2="body_link2" reason="Adjacent" />
+  <disable_collisions link1="body_link2" link2="right_base_link" reason="Adjacent" />
+  <disable_collisions link1="base_link" link2="right_wheel" reason="Adjacent" />
+  <disable_collisions link1="right_camera_stand_end" link2="right_wide_loop_Link" reason="Adjacent" />
+  <disable_collisions link1="base_link" link2="scan" reason="Adjacent" />
+  <disable_collisions link1="gripper_r_base_link" link2="right_narrow1_Link" reason="Adjacent" />
+  <disable_collisions link1="left_link6" link2="arm_l_end_link" reason="Adjacent" />
+  <disable_collisions link1="arm_r_end_link" link2="right_camera_stand_end" reason="Adjacent" />
+  <disable_collisions link1="arm_base" link2="left_base_link" reason="Adjacent" />
+  <disable_collisions link1="right_link3" link2="right_link4" reason="Adjacent" />
+  <disable_collisions link1="left_link3" link2="left_link4" reason="Adjacent" />
+  <disable_collisions link1="left_link1" link2="left_link2" reason="Adjacent" />
+  <disable_collisions link1="base_footprint" link2="left_wheel" reason="Adjacent" />
+  <disable_collisions link1="left_link5" link2="left_link6" reason="Adjacent" />
+  <disable_collisions link1="right_camera_stand_end" link2="right_narrow1_Link" reason="Adjacent" />
+  <disable_collisions link1="right_link1" link2="right_link2" reason="Adjacent" />
+  <disable_collisions link1="gripper_l_base_link" link2="left_wide_loop_Link" reason="Adjacent" />
+  <disable_collisions link1="left_camera_stand_end" link2="gripper_l_base_link" reason="Adjacent" />
+  <disable_collisions link1="right_link2" link2="right_link3" reason="Adjacent" />
+  <disable_collisions link1="base_footprint" link2="base_link" reason="Adjacent" />
+  <disable_collisions link1="gripper_r_base_link" link2="right_wide1_Link" reason="Adjacent" />
+  <disable_collisions link1="gripper_r_base_link" link2="right_narrow_loop_Link" reason="Adjacent" />
+  <disable_collisions link1="left_narrow1_Link" link2="left_narrow2_Link" reason="Adjacent" />
+  <disable_collisions link1="right_link5" link2="right_link6" reason="Adjacent" />
+  <disable_collisions link1="right_link6" link2="arm_r_end_link" reason="Adjacent" />
+  <disable_collisions link1="left_camera_stand" link2="left_camera_stand_end" reason="Adjacent" />
+  <disable_collisions link1="left_base_link" link2="left_link1" reason="Adjacent" />
+  <disable_collisions link1="base_footprint" link2="body_link1" reason="Adjacent" />
+  <disable_collisions link1="left_camera_stand_end" link2="left_wide_loop_Link" reason="Adjacent" />
+  <disable_collisions link1="right_wide1_Link" link2="right_wide2_Link" reason="Adjacent" />
+  <disable_collisions link1="right_wide3_Link" link2="right_wide4_Link" reason="Adjacent" />
+  <disable_collisions link1="head_link2" link2="head_camera" reason="Adjacent" />
+  <disable_collisions link1="gripper_l_base_link" link2="left_narrow1_Link" reason="Adjacent" />
+  <disable_collisions link1="right_camera_stand_end" link2="gripper_r_base_link" reason="Adjacent" />
+  <disable_collisions link1="body_link2" link2="left_base_link" reason="Adjacent" />
+  <disable_collisions link1="right_camera_stand_end" link2="right_narrow_loop_Link" reason="Adjacent" />
+  <disable_collisions link1="right_camera_stand_end" link2="right_wide1_Link" reason="Adjacent" />
+  <disable_collisions link1="right_narrow2_Link" link2="right_narrow3_Link" reason="Adjacent" />
+  <disable_collisions link1="base_footprint" link2="imu" reason="Adjacent" />
+  <disable_collisions link1="body_link2" link2="head_link1" reason="Adjacent" />
+  <disable_collisions link1="left_link4" link2="left_link5" reason="Adjacent" />
+  <disable_collisions link1="gripper_l_base_link" link2="left_narrow_loop_Link" reason="Adjacent" />
+  <disable_collisions link1="base_link" link2="left_wheel" reason="Adjacent" />
+  <disable_collisions link1="body_link2" link2="arm_base" reason="Adjacent" />
+  <disable_collisions link1="base_footprint" link2="scan" reason="Adjacent" />
+  <disable_collisions link1="base_footprint" link2="right_wheel" reason="Adjacent" />
+  <disable_collisions link1="left_camera_stand_end" link2="left_narrow1_Link" reason="Adjacent" />
+  <disable_collisions link1="left_narrow3_Link" link2="left_narrow4_Link" reason="Adjacent" />
+  <disable_collisions link1="arm_base" link2="left_link1" reason="Adjacent" />
+  <disable_collisions link1="left_wide2_Link" link2="left_wide3_Link" reason="Adjacent" />
+  <disable_collisions link1="right_wide2_Link" link2="right_wide3_Link" reason="Adjacent" />
+  <disable_collisions link1="gripper_l_base_link" link2="left_wide1_Link" reason="Adjacent" />
+  <disable_collisions link1="head_link1" link2="head_link2" reason="Adjacent" />
+  <disable_collisions link1="left_camera_stand" link2="gripper_l_base_link" reason="Adjacent" />
+  <disable_collisions link1="arm_base" link2="right_base_link" reason="Adjacent" />
+  <disable_collisions link1="left_camera_stand_end" link2="left_narrow_loop_Link" reason="Adjacent" />
+  <disable_collisions link1="right_camera_stand" link2="gripper_r_base_link" reason="Adjacent" />
+  <disable_collisions link1="arm_base" link2="right_link1" reason="Adjacent" />
+  <disable_collisions link1="right_narrow1_Link" link2="right_narrow2_Link" reason="Adjacent" />
+  <disable_collisions link1="base_link" link2="body_link1" reason="Adjacent" />
+  <disable_collisions link1="left_wide1_Link" link2="left_wide2_Link" reason="Adjacent" />
+  <disable_collisions link1="arm_r_end_link" link2="right_camera_stand" reason="Adjacent" />
+  <disable_collisions link1="left_wide3_Link" link2="left_wide4_Link" reason="Adjacent" />
+  <disable_collisions link1="right_base_link" link2="right_link1" reason="Adjacent" />
+  <disable_collisions link1="right_narrow3_Link" link2="right_narrow4_Link" reason="Adjacent" />
+  <disable_collisions link1="right_link4" link2="right_link5" reason="Adjacent" />
+  <disable_collisions link1="arm_l_end_link" link2="left_camera_stand" reason="Adjacent" />
+  <disable_collisions link1="gripper_r_base_link" link2="right_wide_loop_Link" reason="Adjacent" />
+  <disable_collisions link1="left_camera_stand_end" link2="left_wide1_Link" reason="Adjacent" />
+  <disable_collisions link1="base_link" link2="imu" reason="Adjacent" />
+  <disable_collisions link1="right_camera_stand" link2="right_camera_stand_end" reason="Adjacent" />
+  
+  <!-- Default collisions (at zero pose) -->
+  <disable_collisions link1="body_link2" link2="left_link1" reason="Default" />
+  <disable_collisions link1="left_narrow3_Link" link2="left_narrow_loop_Link" reason="Default" />
+  <disable_collisions link1="left_wide3_Link" link2="left_wide_loop_Link" reason="Default" />
+  <disable_collisions link1="body_link2" link2="right_link1" reason="Default" />
+  <disable_collisions link1="right_narrow3_Link" link2="right_narrow_loop_Link" reason="Default" />
+  <disable_collisions link1="right_wide3_Link" link2="right_wide_loop_Link" reason="Default" />
+  <disable_collisions link1="body_link2" link2="head_link2" reason="Default" />
+
+</robot>
