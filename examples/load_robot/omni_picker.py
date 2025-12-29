@@ -34,7 +34,7 @@ for joint in robot.get_joints():
 # The gripper has mimic joints - set them all to initial position
 gripper_value = 0  # Initial gripper opening (0=closed, 1=open)
 mimic_multipliers = {
-    'gripper_joint': 1.0,
+    # 'gripper_joint': 1.0,
     'narrow2_joint': 0.02,
     'narrow3_joint': 0.4,
     'narrow_loop_joint': 1.5,
@@ -64,10 +64,12 @@ for joint in robot.get_active_joints():
     if joint_name in mimic_multipliers.keys():
         # set a very weak PD control for the gripper joints
         # joint.set_drive_properties(stiffness=2000.0, damping=0.0) # big stiffness and zero damping on mimic joint to avoid shaking
-         joint.set_drive_properties(stiffness=1000.0, damping=0.0) # big stiffness and zero damping on mimic joint to avoid shaking
+        joint.set_drive_properties(stiffness=1000.0, damping=0.0) # big stiffness and zero damping on mimic joint to avoid shaking
         
+        # joint.set_armature([0.0001])  # set a small armature for more stable control
     else:
-        joint.set_drive_properties(stiffness=100.0, damping=10.0, force_limit=50)
+        joint.set_drive_properties(stiffness=2000.0, damping=100.0)
+    print(f"Default joint armature: {joint.get_armature()}")
     # set a normal stiffness and damping for the arm joints
     # joint.set_drive_property(stiffness=1000.0, damping=40.0)
 # Set initial position directly (more stable than PD control)
@@ -104,7 +106,19 @@ while not viewer.closed:
 
     # in loop open/close the gripper
     time += dt
-    gripper_value = 0.5 + 0.5 * np.sin(time)
+    # sin
+    # gripper_value = 0.5 + 0.5 * np.sin(time)
+    
+    time_in_cycle = time % 4.0
+    if time_in_cycle < 2.0:
+        # gripper_value = time_in_cycle / 2.0 * 0.8  # open from 0 to 0.8
+        gripper_value = 0.8
+    else:
+        # gripper_value = (4.0 - time_in_cycle) / 2.0 * 0.8  # close from 0.8 to 0
+        gripper_value = 0.0
+    
+    # limit gripper_value by its upper and lower limits
+    gripper_value = np.clip(gripper_value, 0.0, 0.8)
     qpos = []
     for joint in robot.get_active_joints():
         joint_name = joint.get_name()
@@ -116,5 +130,7 @@ while not viewer.closed:
     # robot.set_qpos(np.array(qpos))
     # Instead of directly setting qpos, use drive targets for smooth motion
     for i, joint in enumerate(robot.get_active_joints()):
+        joint_name = joint.get_name()
+        # if "gripper_joint" in joint_name:
         joint.set_drive_target(qpos[i])
     

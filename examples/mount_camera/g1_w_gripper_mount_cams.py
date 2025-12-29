@@ -35,7 +35,7 @@ for joint in robot.get_joints():
 # The gripper has mimic joints - set them all to initial position
 gripper_value = 0  # Initial gripper opening (0=closed, 1=open)
 mimic_multipliers = {
-    'gripper_joint': 1.0,
+    # 'gripper_joint': 1.0,
     'narrow2_joint': 0.02,
     'narrow3_joint': 0.4,
     'narrow_loop_joint': 1.5,
@@ -67,18 +67,20 @@ for joint in robot.get_active_joints():
 # Optional: Add weak PD control for stability
 for joint in robot.get_active_joints():
     joint_name = joint.get_name()
-    if joint_name in mimic_multipliers.keys():
+    # if joint_name in mimic_multipliers.keys():
+    if joint_name in dualarm_mimic_multipliers.keys():
         # Mimic joints: High stiffness but WITH force limit and damping to prevent overpowering arm
         # joint.set_drive_properties(stiffness=2000.0, damping=0.0, force_limit=100.0)
-        joint.set_drive_properties(stiffness=2000.0, damping=0.0)
+        joint.set_drive_properties(stiffness=1000.0, damping=0.0)
         print(f"[MIMIC] {joint_name}: stiffness=1000.0, damping=0.0, force_limit=100.0")
-    elif joint_name.startswith("gripper"):
+    elif "gripper_joint" in joint_name:
         # Master gripper joint: moderate control
+        # joint.set_drive_properties(stiffness=2000.0, damping=100.0)
         joint.set_drive_properties(stiffness=100.0, damping=10.0, force_limit=50.0)
         print(f"[GRIPPER] {joint_name}: stiffness=100.0, damping=10.0, force_limit=50.0")
     else:
         # Arm joints: strong control to resist gripper forces
-        joint.set_drive_properties(stiffness=2000, damping=500, force_limit=10000)
+        joint.set_drive_properties(stiffness=2000, damping=100)
 
         #### VERY IMPORTANT: if not set manually the arm will not stay at target position dragged away by gripper
         joint.set_armature([0.5])
